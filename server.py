@@ -7,14 +7,14 @@ ROOT=Path(__file__).parent
 QUESTIONS=json.loads((ROOT/'questions.json').read_text(encoding='utf-8'))
 LOCK=threading.RLock()
 PIN=str(random.SystemRandom().randint(1000,9999))
-ADMIN=secrets.token_urlsafe(22)
+ADMIN=os.environ.get('ADMIN_KEY') or secrets.token_urlsafe(22)
 STATE={'phase':'lobby','index':-1,'deadline':0,'players':{},'reveal':False}
 DURATION=30
 
 def public_state(admin=False, token=None):
     with LOCK:
         idx=STATE['index']; q=QUESTIONS[idx] if 0<=idx<len(QUESTIONS) else None
-        players=sorted([{'id':k,'nick':v['nick'],'avatar':v['avatar'],'score':v['score'],'answered':idx in v['answers']} for k,v in STATE['players'].items()],key=lambda x:-x['score'])
+        players=sorted([{'id':k if k==token else v['public_id'],'nick':v['nick'],'avatar':v['avatar'],'score':v['score'],'answered':idx in v['answers']} for k,v in STATE['players'].items()],key=lambda x:-x['score'])
         out={'phase':STATE['phase'],'index':idx,'total':len(QUESTIONS),'deadline':STATE['deadline'],'serverTime':time.time(),'players':players,'reveal':STATE['reveal']}
         if q:out['question']={'text':q['text'],'answers':q['answers']}
         if STATE['reveal'] and q:out['correct']=q['correct']
@@ -35,7 +35,8 @@ class Handler(BaseHTTPRequestHandler):
             if params.get('key',[''])[0]!=ADMIN:return self.send(403,{'error':'Acesso negado'})
             return self.send(200,{'pin':PIN,'state':public_state()})
         if u.path=='/qr.png':
-            url=f'http://{self.headers.get("Host", "localhost:8000")}/?join=1'
+            origin=os.environ.get('RENDER_EXTERNAL_URL') or f'http://{self.headers.get("Host", "localhost:8000")}'
+            url=f'{origin.rstrip("/")}/?join=1'
             img=qrcode.make(url);b=io.BytesIO();img.save(b,format='PNG');return self.send(200,b.getvalue(),'image/png')
         return self.send(404,{'error':'Não encontrado'})
     def do_POST(self):
@@ -47,7 +48,7 @@ class Handler(BaseHTTPRequestHandler):
                 nick=str(d.get('nick','')).strip()[:24];avatar=str(d.get('avatar',''))[:8]
                 if not nick or not avatar:return self.send(400,{'error':'Escolha apelido e avatar'})
                 if any(p['nick'].casefold()==nick.casefold() for p in STATE['players'].values()):return self.send(409,{'error':'Apelido em uso'})
-                token=secrets.token_urlsafe(20);STATE['players'][token]={'nick':nick,'avatar':avatar,'score':0,'answers':{}}
+                token=secrets.token_urlsafe(20);STATE['players'][token]={'public_id':secrets.token_urlsafe(12),'nick':nick,'avatar':avatar,'score':0,'answers':{}}
                 return self.send(200,{'token':token})
             if u.path=='/api/answer':
                 token=d.get('token');idx=STATE['index'];p=STATE['players'].get(token)
@@ -77,5 +78,7 @@ def ip():
     finally:s.close()
 if __name__=='__main__':
     port=int(os.environ.get('PORT','8000'))
-    print('\nQUIZ BASES DE DADOS\nAcesso professor: http://localhost:%d/?host=%s\nAcesso alunos: http://%s:%d/\nPIN: %s\n'%(port,ADMIN,ip(),port,PIN),flush=True)
+    print('\nQUIZ BASES DE DADOS\nServidor iniciado na porta %d\n'%port,flush=True)
+    if not os.environ.get('RENDER'):
+        print('Acesso professor: http://localhost:%d/?host=%s\nAcesso alunos: http://%s:%d/\nPIN: %s\n'%(port,ADMIN,ip(),port,PIN),flush=True)
     ThreadingHTTPServer(('0.0.0.0',port),Handler).serve_forever()
