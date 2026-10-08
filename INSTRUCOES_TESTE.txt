@@ -1,0 +1,12 @@
+AMBIENTE DE TESTE
+Abra teste.html com duplo clique. Funciona offline e sem instalar nada.
+Clique em Simular entrada de participante, informe PIN 1235, apelido e avatar.
+Volte à sala e inicie as 11 perguntas. As respostas e o placar são simulados no mesmo navegador.
+
+PARTICIPANTES REAIS EM CELULARES DISTINTOS
+Instale Python e execute: py -m pip install qrcode[pil]
+Na pasta extraída, execute: py server.py
+Abra o link de professor mostrado no terminal (com ?host=...).
+Projete o QR Code. Os celulares precisam estar na mesma rede Wi-Fi.
+NÃO abra index.html diretamente: isso provoca o erro Failed to fetch.
+O PIN real é gerado pelo servidor. Não é o PIN fixo 1235 da simulação.

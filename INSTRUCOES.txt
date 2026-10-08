@@ -1,0 +1,16 @@
+QUIZ BASES DE DADOS - MODO OFFLINE EM REDE LOCAL
+
+1. Instale Python 3 e a biblioteca qrcode: py -m pip install qrcode[pil]
+2. Extraia o ZIP e abra o terminal na pasta quiz_bases.
+3. Execute: py server.py (no Linux/Mac: python3 server.py)
+4. O terminal exibirá a URL do PROFESSOR (contendo uma chave privada) e a URL dos ALUNOS.
+5. Abra a URL do PROFESSOR no navegador do computador e projete a tela.
+6. Conecte celulares e computador à mesma rede Wi-Fi; os alunos escaneiam o QR Code.
+7. Eles digitam o PIN exibido, escolhem apelido e avatar e aguardam.
+8. Clique em Iniciar perguntas. A cada pergunta, clique para revelar e avançar.
+
+A rede Wi-Fi pode operar SEM INTERNET, desde que os dispositivos consigam se comunicar.
+Se o QR Code apontar para localhost, abra a URL do professor usando o IP local do computador em vez de localhost (preservando o ?host=...).
+Libere a porta TCP 8000 no firewall local quando necessário. Redes de visitantes com isolamento de dispositivos podem impedir o acesso.
+
+MODO ONLINE: implante esta aplicação Python em hospedagem que execute processos persistentes, com HTTPS e domínio público. Defina PORT conforme a hospedagem. Esta versão é voltada a uma única sala e armazena resultados apenas na memória do servidor: reiniciar o processo apaga a sessão. Não exponha a URL privada do professor.
